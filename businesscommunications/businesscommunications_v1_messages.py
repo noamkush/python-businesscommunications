@@ -19,25 +19,29 @@ class Agent(_messages.Message):
       40 characters. Not modifiable after agent verification.
     name: The unique identifier of the agent. Read-only. Defined by the
       platform.
+    verifiedCallsAgent: Detailed agent information for Verified Calls.
     verifiedSmsAgent: Detailed agent information for Verified SMS.
   """
 
   businessMessagesAgent = _messages.MessageField('BusinessMessagesAgent', 1)
   displayName = _messages.StringField(2)
   name = _messages.StringField(3)
-  verifiedSmsAgent = _messages.MessageField('VerifiedSmsAgent', 4)
+  verifiedCallsAgent = _messages.MessageField('VerifiedCallsAgent', 4)
+  verifiedSmsAgent = _messages.MessageField('VerifiedSmsAgent', 5)
 
 
 class AgentLaunch(_messages.Message):
   r"""Details about an agent launch.
 
   Fields:
-    businessMessages: Launch details for business messages agent.
+    businessMessages: Launch details for a Business Messages agent.
     name: Required. The identifier for launch.
+    verifiedCalls: Launch details for a Verified Calls agent.
   """
 
   businessMessages = _messages.MessageField('BusinessMessagesLaunch', 1)
   name = _messages.StringField(2)
+  verifiedCalls = _messages.MessageField('VerifiedCallsLaunch', 3)
 
 
 class AgentVerification(_messages.Message):
@@ -132,6 +136,8 @@ class BusinessMessagesAgent(_messages.Message):
       information. Enables the agent to support multiple interaction types.
     agentTestUrl: Output only. The URL for testing the agent's conversational
       experience. Defined by the platform.
+    authorizationConfig: Optional. Authorization configuration for OAuth
+      support.
     conversationalSettings: Required. Conversational settings for an agent,
       mapped to a locale. Locale is represented by a well-formed [IETF BCP
       47](https://tools.ietf.org/html/bcp47) language tag.
@@ -143,6 +149,7 @@ class BusinessMessagesAgent(_messages.Message):
       modifiable after agent verification.
     logoUrl: Required. Publicly available URL of the logo for the agent.
       Maximum 50 KB. Not modifiable after agent verification.
+    nonLocalConfig: Optional. Configuration for non-local entry points.
     phone: Optional. The phone number for the agent to display. If not
       specified, the agent displays the phone number for the brand found in
       the [Google Knowledge Graph](https://developers.google.com/knowledge-
@@ -183,14 +190,98 @@ class BusinessMessagesAgent(_messages.Message):
 
   additionalAgentInteractions = _messages.MessageField('SupportedAgentInteraction', 1, repeated=True)
   agentTestUrl = _messages.StringField(2)
-  conversationalSettings = _messages.MessageField('ConversationalSettingsValue', 3)
-  customAgentId = _messages.StringField(4)
-  defaultLocale = _messages.StringField(5)
-  entryPointConfigs = _messages.MessageField('BusinessMessagesEntryPointConfig', 6, repeated=True)
-  logoUrl = _messages.StringField(7)
-  phone = _messages.MessageField('Phone', 8)
-  primaryAgentInteraction = _messages.MessageField('SupportedAgentInteraction', 9)
-  testUrls = _messages.MessageField('TestUrl', 10, repeated=True)
+  authorizationConfig = _messages.MessageField('BusinessMessagesAgentAuthorizationConfig', 3)
+  conversationalSettings = _messages.MessageField('ConversationalSettingsValue', 4)
+  customAgentId = _messages.StringField(5)
+  defaultLocale = _messages.StringField(6)
+  entryPointConfigs = _messages.MessageField('BusinessMessagesEntryPointConfig', 7, repeated=True)
+  logoUrl = _messages.StringField(8)
+  nonLocalConfig = _messages.MessageField('BusinessMessagesAgentNonLocalConfig', 9)
+  phone = _messages.MessageField('Phone', 10)
+  primaryAgentInteraction = _messages.MessageField('SupportedAgentInteraction', 11)
+  testUrls = _messages.MessageField('TestUrl', 12, repeated=True)
+
+
+class BusinessMessagesAgentAuthorizationConfig(_messages.Message):
+  r"""Configuration details for supporting OAuth on Business Messages.
+
+  Fields:
+    endpointUrl: The endpoint URL where the user logs in.
+  """
+
+  endpointUrl = _messages.StringField(1)
+
+
+class BusinessMessagesAgentNonLocalConfig(_messages.Message):
+  r"""Configuration to enable non-local entry points.
+
+  Fields:
+    callDeflectionPhoneNumbers: Required. List of phone numbers for call
+      deflection.
+    contactOption: Required. Contact information for the agent that displays
+      with the messaging button.
+    enabledDomains: Required. Domains enabled to host the Business Messages
+      widget.
+    phoneNumber: Required. Agent's phone number. Overrides the `phone` field
+      for conversations started from non-local entry points.
+    regionCodes: Required. List of [CLDR region
+      codes](https://www.iana.org/assignments/language-subtag-
+      registry/language-subtag-registry) for countries where the agent is
+      allowed to launch `NON_LOCAL` entry points. Required for `NON_LOCAL`
+      entry points.
+  """
+
+  callDeflectionPhoneNumbers = _messages.MessageField('Phone', 1, repeated=True)
+  contactOption = _messages.MessageField('BusinessMessagesAgentNonLocalConfigContactOption', 2)
+  enabledDomains = _messages.StringField(3, repeated=True)
+  phoneNumber = _messages.MessageField('Phone', 4)
+  regionCodes = _messages.StringField(5, repeated=True)
+
+
+class BusinessMessagesAgentNonLocalConfigContactOption(_messages.Message):
+  r"""Contact details displayed in addition to the messaging button.
+
+  Enums:
+    OptionsValueListEntryValuesEnum:
+
+  Fields:
+    options: Required. The list of contact options available for the specified
+      URL.
+    url: Required. The URL that contact options are available for.
+  """
+
+  class OptionsValueListEntryValuesEnum(_messages.Enum):
+    r"""OptionsValueListEntryValuesEnum enum type.
+
+    Values:
+      OPTION_UNSPECIFIED: Unspecified
+      WEB_CHAT: Web Chat option.
+      PHONE: Phone option.
+      EMAIL: Email option.
+      FAQS: FAQ option.
+      TWITTER: Twitter option.
+      WHATSAPP: Whatsapp option.
+    """
+    OPTION_UNSPECIFIED = 0
+    WEB_CHAT = 1
+    PHONE = 2
+    EMAIL = 3
+    FAQS = 4
+    TWITTER = 5
+    WHATSAPP = 6
+
+  options = _messages.EnumField('OptionsValueListEntryValuesEnum', 1, repeated=True)
+  url = _messages.StringField(2)
+
+
+class BusinessMessagesCapability(_messages.Message):
+  r"""Business Messages capabilities
+
+  Fields:
+    webhookUrl: Required. The webhook URL where the messages are delivered.
+  """
+
+  webhookUrl = _messages.StringField(1)
 
 
 class BusinessMessagesEntryPointConfig(_messages.Message):
@@ -211,9 +302,11 @@ class BusinessMessagesEntryPointConfig(_messages.Message):
     Values:
       ENTRY_POINT_UNSPECIFIED: Unspecified entry point.
       LOCATION: Enable locations for this agent.
+      NON_LOCAL: Enable Business Messages for non-local entry points.
     """
     ENTRY_POINT_UNSPECIFIED = 0
     LOCATION = 1
+    NON_LOCAL = 2
 
   allowedEntryPoint = _messages.EnumField('AllowedEntryPointValueValuesEnum', 1)
 
@@ -229,6 +322,12 @@ class BusinessMessagesEntryPointLaunch(_messages.Message):
   Fields:
     entryPoint: Entry point for which launch information is provided.
     launchState: The launch state for entry point.
+    regionCodes: List of [CLDR region
+      codes](https://www.iana.org/assignments/language-subtag-
+      registry/language-subtag-registry) for countries where the agent should
+      launch `NON_LOCAL` entry points. Required for `NON_LOCAL` entry points.
+      This must be a subset of the region codes specified in the agent's
+      `nonLocalConfig`.
   """
 
   class EntryPointValueValuesEnum(_messages.Enum):
@@ -237,9 +336,11 @@ class BusinessMessagesEntryPointLaunch(_messages.Message):
     Values:
       ENTRY_POINT_UNSPECIFIED: Unspecified entry point.
       LOCATION: Enable locations for this agent.
+      NON_LOCAL: Enable Business Messages for non-local entry points.
     """
     ENTRY_POINT_UNSPECIFIED = 0
     LOCATION = 1
+    NON_LOCAL = 2
 
   class LaunchStateValueValuesEnum(_messages.Enum):
     r"""The launch state for entry point.
@@ -251,6 +352,7 @@ class BusinessMessagesEntryPointLaunch(_messages.Message):
       LAUNCH_STATE_LAUNCHED: Launched.
       LAUNCH_STATE_REJECTED: Launch is rejected.
       LAUNCH_STATE_SUSPENDED: Launch is suspended.
+      LAUNCH_STATE_PENDING_UNLAUNCH: Unlaunch in review.
     """
     LAUNCH_STATE_UNSPECIFIED = 0
     LAUNCH_STATE_UNLAUNCHED = 1
@@ -258,9 +360,11 @@ class BusinessMessagesEntryPointLaunch(_messages.Message):
     LAUNCH_STATE_LAUNCHED = 3
     LAUNCH_STATE_REJECTED = 4
     LAUNCH_STATE_SUSPENDED = 5
+    LAUNCH_STATE_PENDING_UNLAUNCH = 6
 
   entryPoint = _messages.EnumField('EntryPointValueValuesEnum', 1)
   launchState = _messages.EnumField('LaunchStateValueValuesEnum', 2)
+  regionCodes = _messages.StringField(3, repeated=True)
 
 
 class BusinessMessagesLaunch(_messages.Message):
@@ -658,6 +762,33 @@ class BusinesscommunicationsBrandsPatchRequest(_messages.Message):
   updateMask = _messages.StringField(3)
 
 
+class BusinesscommunicationsPartnersGetRequest(_messages.Message):
+  r"""A BusinesscommunicationsPartnersGetRequest object.
+
+  Fields:
+    name: Optional. The unique identifier of the partner.
+  """
+
+  name = _messages.StringField(1, required=True)
+
+
+class BusinesscommunicationsPartnersPatchRequest(_messages.Message):
+  r"""A BusinesscommunicationsPartnersPatchRequest object.
+
+  Fields:
+    name: Output only. The unique identifier of the partner. Defined by the
+      platform.
+    partner: A Partner resource to be passed as the request body.
+    updateMask: The update mask applies to the resource. For the FieldMask
+      definition, see https://developers.google.com/protocol-
+      buffers/docs/reference/google.protobuf#fieldmask
+  """
+
+  name = _messages.StringField(1, required=True)
+  partner = _messages.MessageField('Partner', 2)
+  updateMask = _messages.StringField(3)
+
+
 class ConversationStarters(_messages.Message):
   r"""Suggested replies shown to users when they enter a conversation with the
   agent for the first time.
@@ -696,73 +827,6 @@ class Empty(_messages.Message):
   representation for `Empty` is empty JSON object `{}`.
   """
 
-
-
-class Hours(_messages.Message):
-  r"""A range of hours that messaging is available.
-
-  Enums:
-    EndDayValueValuesEnum: Required. End day. Includes the specified day.
-    StartDayValueValuesEnum: Required. Start day.
-
-  Fields:
-    endDay: Required. End day. Includes the specified day.
-    endTime: Required. End time for each day within the day-of-week range.
-    startDay: Required. Start day.
-    startTime: Required. Start time for each day within the day-of-week range.
-    timeZone: Required. The [IANA time zone](https://www.iana.org/time-zones)
-      for the hours. For example, "America/Los_Angeles".
-  """
-
-  class EndDayValueValuesEnum(_messages.Enum):
-    r"""Required. End day. Includes the specified day.
-
-    Values:
-      DAY_OF_WEEK_UNSPECIFIED: The day of the week is unspecified.
-      MONDAY: Monday
-      TUESDAY: Tuesday
-      WEDNESDAY: Wednesday
-      THURSDAY: Thursday
-      FRIDAY: Friday
-      SATURDAY: Saturday
-      SUNDAY: Sunday
-    """
-    DAY_OF_WEEK_UNSPECIFIED = 0
-    MONDAY = 1
-    TUESDAY = 2
-    WEDNESDAY = 3
-    THURSDAY = 4
-    FRIDAY = 5
-    SATURDAY = 6
-    SUNDAY = 7
-
-  class StartDayValueValuesEnum(_messages.Enum):
-    r"""Required. Start day.
-
-    Values:
-      DAY_OF_WEEK_UNSPECIFIED: The day of the week is unspecified.
-      MONDAY: Monday
-      TUESDAY: Tuesday
-      WEDNESDAY: Wednesday
-      THURSDAY: Thursday
-      FRIDAY: Friday
-      SATURDAY: Saturday
-      SUNDAY: Sunday
-    """
-    DAY_OF_WEEK_UNSPECIFIED = 0
-    MONDAY = 1
-    TUESDAY = 2
-    WEDNESDAY = 3
-    THURSDAY = 4
-    FRIDAY = 5
-    SATURDAY = 6
-    SUNDAY = 7
-
-  endDay = _messages.EnumField('EndDayValueValuesEnum', 1)
-  endTime = _messages.MessageField('TimeOfDay', 2)
-  startDay = _messages.EnumField('StartDayValueValuesEnum', 3)
-  startTime = _messages.MessageField('TimeOfDay', 4)
-  timeZone = _messages.StringField(5)
 
 
 class HumanRepresentative(_messages.Message):
@@ -837,9 +901,10 @@ class Location(_messages.Message):
       conversational experience. Defined by the platform.
     name: The unique identifier of the location. Read-only. Defined by the
       platform.
-    placeId: Required. The [Place ID](https://developers.google.com/places
-      /place-id), or unique identifier used in Google Maps, for the location.
-      Not modifiable after being available to users through an agent.
+    placeId: Required. The [Place
+      ID](https://developers.google.com/places/place-id), or unique identifier
+      used in Google Maps, for the location. Not modifiable after being
+      available to users through an agent.
     testUrls: Output only. URLs for testing the location's conversational
       experience. Defined by the platform.
   """
@@ -932,6 +997,7 @@ class LocationLaunch(_messages.Message):
       LAUNCH_STATE_LAUNCHED: Launched.
       LAUNCH_STATE_REJECTED: Launch is rejected.
       LAUNCH_STATE_SUSPENDED: Launch is suspended.
+      LAUNCH_STATE_PENDING_UNLAUNCH: Unlaunch in review.
     """
     LAUNCH_STATE_UNSPECIFIED = 0
     LAUNCH_STATE_UNLAUNCHED = 1
@@ -939,6 +1005,7 @@ class LocationLaunch(_messages.Message):
     LAUNCH_STATE_LAUNCHED = 3
     LAUNCH_STATE_REJECTED = 4
     LAUNCH_STATE_SUSPENDED = 5
+    LAUNCH_STATE_PENDING_UNLAUNCH = 6
 
   launchState = _messages.EnumField('LaunchStateValueValuesEnum', 1)
   name = _messages.StringField(2)
@@ -986,7 +1053,74 @@ class MessagingAvailability(_messages.Message):
     hours: Required. Hours of messaging availability.
   """
 
-  hours = _messages.MessageField('Hours', 1, repeated=True)
+  hours = _messages.MessageField('MessagingAvailabilityHours', 1, repeated=True)
+
+
+class MessagingAvailabilityHours(_messages.Message):
+  r"""A range of hours that messaging is available.
+
+  Enums:
+    EndDayValueValuesEnum: Required. End day. Includes the specified day.
+    StartDayValueValuesEnum: Required. Start day.
+
+  Fields:
+    endDay: Required. End day. Includes the specified day.
+    endTime: Required. End time for each day within the day-of-week range.
+    startDay: Required. Start day.
+    startTime: Required. Start time for each day within the day-of-week range.
+    timeZone: Required. The [IANA time zone](https://www.iana.org/time-zones)
+      for the hours. For example, "America/Los_Angeles".
+  """
+
+  class EndDayValueValuesEnum(_messages.Enum):
+    r"""Required. End day. Includes the specified day.
+
+    Values:
+      DAY_OF_WEEK_UNSPECIFIED: The day of the week is unspecified.
+      MONDAY: Monday
+      TUESDAY: Tuesday
+      WEDNESDAY: Wednesday
+      THURSDAY: Thursday
+      FRIDAY: Friday
+      SATURDAY: Saturday
+      SUNDAY: Sunday
+    """
+    DAY_OF_WEEK_UNSPECIFIED = 0
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+  class StartDayValueValuesEnum(_messages.Enum):
+    r"""Required. Start day.
+
+    Values:
+      DAY_OF_WEEK_UNSPECIFIED: The day of the week is unspecified.
+      MONDAY: Monday
+      TUESDAY: Tuesday
+      WEDNESDAY: Wednesday
+      THURSDAY: Thursday
+      FRIDAY: Friday
+      SATURDAY: Saturday
+      SUNDAY: Sunday
+    """
+    DAY_OF_WEEK_UNSPECIFIED = 0
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+  endDay = _messages.EnumField('EndDayValueValuesEnum', 1)
+  endTime = _messages.MessageField('TimeOfDay', 2)
+  startDay = _messages.EnumField('StartDayValueValuesEnum', 3)
+  startTime = _messages.MessageField('TimeOfDay', 4)
+  timeZone = _messages.StringField(5)
 
 
 class OfflineMessage(_messages.Message):
@@ -1010,6 +1144,25 @@ class OpenUrlAction(_messages.Message):
   url = _messages.StringField(1)
 
 
+class Partner(_messages.Message):
+  r"""Partner that is onboarded with a supported product.
+
+  Fields:
+    company: Optional. The company name of the partner.
+    contactEmails: Optional. The list of contact emails.
+    displayName: Required. The display name of the partner.
+    name: Output only. The unique identifier of the partner. Defined by the
+      platform.
+    productCapabilities: The product capabilities of the partner.
+  """
+
+  company = _messages.StringField(1)
+  contactEmails = _messages.StringField(2, repeated=True)
+  displayName = _messages.StringField(3)
+  name = _messages.StringField(4)
+  productCapabilities = _messages.MessageField('ProductCapability', 5, repeated=True)
+
+
 class Phone(_messages.Message):
   r"""Phone number.
 
@@ -1029,6 +1182,35 @@ class PrivacyPolicy(_messages.Message):
   """
 
   url = _messages.StringField(1)
+
+
+class ProductCapability(_messages.Message):
+  r"""The product capabilities that the partner supports.
+
+  Enums:
+    ProductValueValuesEnum: The product supported by the partner.
+
+  Fields:
+    businessMessagesCapability: Business Messages capability.
+    product: The product supported by the partner.
+    verifiedSmsCapability: Verified SMS capability.
+  """
+
+  class ProductValueValuesEnum(_messages.Enum):
+    r"""The product supported by the partner.
+
+    Values:
+      PRODUCT_UNSPECIFIED: Unspecified product.
+      BUSINESS_MESSAGES: Business Messages product.
+      VERIFIED_SMS: Verified SMS product.
+    """
+    PRODUCT_UNSPECIFIED = 0
+    BUSINESS_MESSAGES = 1
+    VERIFIED_SMS = 2
+
+  businessMessagesCapability = _messages.MessageField('BusinessMessagesCapability', 1)
+  product = _messages.EnumField('ProductValueValuesEnum', 2)
+  verifiedSmsCapability = _messages.MessageField('VerifiedSmsCapability', 3)
 
 
 class RequestAgentLaunchRequest(_messages.Message):
@@ -1059,22 +1241,6 @@ class RequestLocationLaunchRequest(_messages.Message):
 
 class RequestLocationVerificationRequest(_messages.Message):
   r"""Request to begin business information verification for a location."""
-
-
-class Sender(_messages.Message):
-  r"""Sender IDs and the countries they operate in.
-
-  Fields:
-    countryCode: A country the sender ID operates in as an [ISO 3166 Alpha-2
-      country code](https://www.iso.org/obp/ui/#search/code/). For example,
-      "US" for the United States of America.
-    senderId: A sender ID-a long code (E.164 format), short code, national
-      code, or alphanumeric code-associated with the agent that can send SMS
-      messages.
-  """
-
-  countryCode = _messages.StringField(1)
-  senderId = _messages.StringField(2)
 
 
 class StandardQueryParameters(_messages.Message):
@@ -1262,6 +1428,118 @@ class TimeOfDay(_messages.Message):
   seconds = _messages.IntegerField(4, variant=_messages.Variant.INT32)
 
 
+class VerifiedCallsAgent(_messages.Message):
+  r"""Agent information specifically related to Verified Calls.
+
+  Fields:
+    callReasons: Required. Call reasons that this agent may use when placing a
+      verified call. Only add / remove actions are allowed. Each action will
+      be reviewed before the change takes place.
+    logoUrl: Required. Publicly available URL of the agent logo to display
+      with a verified call. Maximum 50 KB. Not modifiable after agent
+      verification.
+    phones: Required. Phone numbers that this agent may use when placing a
+      verified call. Only add / remove actions are allowed. Each action will
+      be reviewed before the change takes place.
+  """
+
+  callReasons = _messages.MessageField('VerifiedCallsAgentCallReason', 1, repeated=True)
+  logoUrl = _messages.StringField(2)
+  phones = _messages.MessageField('VerifiedCallsAgentVerifiedCallsPhone', 3, repeated=True)
+
+
+class VerifiedCallsAgentApprovalDetails(_messages.Message):
+  r"""Approval details composed from the state and optional additional
+  information.
+
+  Enums:
+    ApprovalStateValueValuesEnum: Output only. The current approval state.
+
+  Fields:
+    approvalInfo: Output only. Additional information about the decision, if
+      available.
+    approvalState: Output only. The current approval state.
+  """
+
+  class ApprovalStateValueValuesEnum(_messages.Enum):
+    r"""Output only. The current approval state.
+
+    Values:
+      STATE_UNSPECIFIED: Approval state unspecified.
+      PENDING_APPROVAL: Pending for an approval.
+      APPROVED: Approved.
+      DENIED: Denied.
+      PENDING_REMOVAL: Pending for a deletion.
+    """
+    STATE_UNSPECIFIED = 0
+    PENDING_APPROVAL = 1
+    APPROVED = 2
+    DENIED = 3
+    PENDING_REMOVAL = 4
+
+  approvalInfo = _messages.StringField(1)
+  approvalState = _messages.EnumField('ApprovalStateValueValuesEnum', 2)
+
+
+class VerifiedCallsAgentCallReason(_messages.Message):
+  r"""Call reason with approval information.
+
+  Fields:
+    approvalDetails: Output only. Approval details; each call reason must be
+      approved before use.
+    text: Immutable. The actual text of the call reason.
+  """
+
+  approvalDetails = _messages.MessageField('VerifiedCallsAgentApprovalDetails', 1)
+  text = _messages.StringField(2)
+
+
+class VerifiedCallsAgentVerifiedCallsPhone(_messages.Message):
+  r"""Phone number with approval information.
+
+  Fields:
+    approvalDetails: Output only. Approval details, each phone number must be
+      approved before use.
+    number: Immutable. Phone number in E.164 format i.e. +18888888888
+  """
+
+  approvalDetails = _messages.MessageField('VerifiedCallsAgentApprovalDetails', 1)
+  number = _messages.StringField(2)
+
+
+class VerifiedCallsLaunch(_messages.Message):
+  r"""Details about Verified Calls agent launch.
+
+  Enums:
+    LaunchStateValueValuesEnum: The launch state.
+
+  Fields:
+    launchState: The launch state.
+  """
+
+  class LaunchStateValueValuesEnum(_messages.Enum):
+    r"""The launch state.
+
+    Values:
+      LAUNCH_STATE_UNSPECIFIED: Unspecified state.
+      LAUNCH_STATE_UNLAUNCHED: Entity is unlaunched.
+      LAUNCH_STATE_PENDING: Launch in review.
+      LAUNCH_STATE_LAUNCHED: Launched.
+      LAUNCH_STATE_REJECTED: Launch is rejected.
+      LAUNCH_STATE_SUSPENDED: Launch is suspended.
+      LAUNCH_STATE_PENDING_UNLAUNCH: Unlaunch in review.
+    """
+    LAUNCH_STATE_UNSPECIFIED = 0
+    LAUNCH_STATE_UNLAUNCHED = 1
+    LAUNCH_STATE_PENDING = 2
+    LAUNCH_STATE_LAUNCHED = 3
+    LAUNCH_STATE_REJECTED = 4
+    LAUNCH_STATE_SUSPENDED = 5
+    LAUNCH_STATE_PENDING_UNLAUNCH = 6
+
+  launchState = _messages.EnumField('LaunchStateValueValuesEnum', 1)
+
+
 class VerifiedSmsAgent(_messages.Message):
   r"""Agent information specific to Verified SMS.
 
@@ -1274,7 +1552,34 @@ class VerifiedSmsAgent(_messages.Message):
 
   description = _messages.StringField(1)
   logoUrl = _messages.StringField(2)
-  senders = _messages.MessageField('Sender', 3, repeated=True)
+  senders = _messages.MessageField('VerifiedSmsAgentSender', 3, repeated=True)
+
+
+class VerifiedSmsAgentSender(_messages.Message):
+  r"""Sender IDs and the countries they operate in.
+
+  Fields:
+    countryCode: A country the sender ID operates in as an [ISO 3166 Alpha-2
+      country code](https://www.iso.org/obp/ui/#search/code/). For example,
+      "US" for the United States of America.
+    senderId: A sender ID-a long code (E.164 format), short code, national
+      code, or alphanumeric code-associated with the agent that can send SMS
+      messages.
+  """
+
+  countryCode = _messages.StringField(1)
+  senderId = _messages.StringField(2)
+
+
+class VerifiedSmsCapability(_messages.Message):
+  r"""Verified SMS capabilities
+
+  Fields:
+    webhookUrl: Required. The webhook URL where the Verified SMS callbacks are
+      delivered.
+  """
+
+  webhookUrl = _messages.StringField(1)
 
 
 class WelcomeMessage(_messages.Message):

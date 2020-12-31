@@ -39,6 +39,7 @@ class BusinesscommunicationsV1(base_api.BaseApiClient):
     self.brands_agents = self.BrandsAgentsService(self)
     self.brands_locations = self.BrandsLocationsService(self)
     self.brands = self.BrandsService(self)
+    self.partners = self.PartnersService(self)
 
   class BrandsAgentsService(base_api.BaseApiService):
     """Service class for the brands_agents resource."""
@@ -767,5 +768,69 @@ class BusinesscommunicationsV1(base_api.BaseApiClient):
         request_field=u'brand',
         request_type_name=u'BusinesscommunicationsBrandsPatchRequest',
         response_type_name=u'Brand',
+        supports_download=False,
+    )
+
+  class PartnersService(base_api.BaseApiService):
+    """Service class for the partners resource."""
+
+    _NAME = 'partners'
+
+    def __init__(self, client):
+      super(BusinesscommunicationsV1.PartnersService, self).__init__(client)
+      self._upload_configs = {
+          }
+
+    def Get(self, request, global_params=None):
+      r"""Get the information about the partner.
+
+      Args:
+        request: (BusinesscommunicationsPartnersGetRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (Partner) The response message.
+      """
+      config = self.GetMethodConfig('Get')
+      return self._RunMethod(
+          config, request, global_params=global_params)
+
+    Get.method_config = lambda: base_api.ApiMethodInfo(
+        flat_path=u'v1/partners/{partnersId}',
+        http_method=u'GET',
+        method_id=u'businesscommunications.partners.get',
+        ordered_params=[u'name'],
+        path_params=[u'name'],
+        query_params=[],
+        relative_path=u'v1/{+name}',
+        request_field=u'',
+        request_type_name=u'BusinesscommunicationsPartnersGetRequest',
+        response_type_name=u'Partner',
+        supports_download=False,
+    )
+
+    def Patch(self, request, global_params=None):
+      r"""Updates the information for a partner.
+
+      Args:
+        request: (BusinesscommunicationsPartnersPatchRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (Partner) The response message.
+      """
+      config = self.GetMethodConfig('Patch')
+      return self._RunMethod(
+          config, request, global_params=global_params)
+
+    Patch.method_config = lambda: base_api.ApiMethodInfo(
+        flat_path=u'v1/partners/{partnersId}',
+        http_method=u'PATCH',
+        method_id=u'businesscommunications.partners.patch',
+        ordered_params=[u'name'],
+        path_params=[u'name'],
+        query_params=[u'updateMask'],
+        relative_path=u'v1/{+name}',
+        request_field=u'partner',
+        request_type_name=u'BusinesscommunicationsPartnersPatchRequest',
+        response_type_name=u'Partner',
         supports_download=False,
     )
